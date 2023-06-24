@@ -1,0 +1,10 @@
+.card{
+   background-image: linear-gradient(rgb(152, 125, 85),rgb(140, 103, 46));
+}
+/* .cardmore{
+    display: none;
+} */
+.thurukraltitle{
+     text-align: center;
+     font-size: 35px;
+}
