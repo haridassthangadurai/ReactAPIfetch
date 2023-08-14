@@ -1,17 +1,30 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
-import "./NewsApi.css"; // Import the CSS file for styling
+import axios from "axios";
+import "./NewsApi.css";
 import newsCategories from "./News.json";
 import Loding from "./Loding";
+import ReactPaginate from "react-paginate";
+
 const NewsApi = () => {
   const [newsData, setNewsData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // State for loading effect
-  // State to track the number of requests made in the current second
+  const [isLoading, setIsLoading] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
-  // State to track whether the rate limit has been reached
   const [rateLimitReached, setRateLimitReached] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const newsPerPage = 10;
+
+  const handlePageChange = (selectedPage) => {
+    setCurrentPage(selectedPage.selected);
+  };
+
+  const filteredNewsData = () => {
+    const startIndex = currentPage * newsPerPage;
+    const endIndex = startIndex + newsPerPage;
+    return newsData.slice(startIndex, endIndex);
+  };
+
   const newsApiHeaders = {
     "X-BingApis-SDK": "true",
     "X-RapidAPI-Key": "39bd24a422msh9a7be672d18066fp149958jsna6b9c1bad97c",
@@ -23,7 +36,6 @@ const NewsApi = () => {
   const fetchNews = async () => {
     try {
       if (requestCount >= 2) {
-        // If rate limit reached, show a message to the user
         setRateLimitReached(true);
         return;
       }
@@ -32,7 +44,7 @@ const NewsApi = () => {
         safeSearch: "Off",
         textFormat: "Raw",
         freshness: "Day",
-        count: 50,
+        count: 100,
       };
       if (searchQuery) {
         params.q = searchQuery;
@@ -50,24 +62,22 @@ const NewsApi = () => {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
-    // Reset the rate limit state at the beginning of each second
     const rateLimitResetInterval = setInterval(() => {
       setRequestCount(0);
       setRateLimitReached(false);
     }, 1000);
 
-    // Cleanup interval on component unmount
     return () => {
       clearInterval(rateLimitResetInterval);
     };
   }, []);
+
   useEffect(() => {
-    // Increment the request count on each API request
     if (searchQuery || selectedCategory) {
       setRequestCount((prevCount) => prevCount + 1);
     }
-    // Fetch news only if the rate limit has not been reached
     if (!rateLimitReached) {
       fetchNews();
     }
@@ -116,14 +126,13 @@ const NewsApi = () => {
               {category}
             </button>
           ))}
-          {/* Add more category buttons as needed */}
         </div>
 
         <div className="cards-container">
           {isLoading ? (
             <Loding />
           ) : (
-            newsData.map((news, i) => (
+            filteredNewsData().map((news, i) => (
               <a
                 key={i}
                 href={news.url}
@@ -152,9 +161,20 @@ const NewsApi = () => {
             ))
           )}
         </div>
+
+        <ReactPaginate
+          previousLabel={"Previous"}
+          nextLabel={"Next"}
+          pageCount={Math.ceil(newsData.length / newsPerPage)}
+          onPageChange={handlePageChange}
+          containerClassName={"pagination"}
+          previousLinkClassName={"pagination__link"}
+          nextLinkClassName={"pagination__link"}
+          disabledClassName={"pagination__link--disabled"}
+          activeClassName={"pagination__link--active"}
+        />
       </div>
     </div>
   );
 };
-
 export default NewsApi;
